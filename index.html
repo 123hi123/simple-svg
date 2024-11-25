@@ -8,41 +8,38 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
+            display: grid;
+            grid-template-columns: 250px 1fr;
             margin: 0;
             padding: 0;
             height: 100vh;
         }
         #settingsPanel {
-            width: 250px;
             padding: 20px;
             background-color: #f0f0f0;
             overflow-y: auto;
+            min-height: 100vh;
         }
         #mainContent {
-            flex-grow: 1;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 10px;
+            min-height: 100vh;
         }
         textarea {
             width: 100%;
             height: 150px;
-            margin-bottom: 10px;
+            resize: vertical;
         }
         #renderArea {
             border: 1px solid #ccc;
-            margin: 10px 0;
             cursor: pointer;
-            max-width: 400px;
-            max-height: 400px;
-            width: 100%;
-            height: 100%;
+            flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: auto;
         }
         #renderArea svg {
             max-width: 100%;
@@ -118,10 +115,24 @@
         }
 
         function renderSVG() {
-            const svgInput = document.getElementById('svgInput').value;
+            const svgInput = document.getElementById('svgInput').value.trim();
+            const renderArea = document.getElementById('renderArea');
+            
+            if (svgInput === '') {
+                renderArea.innerHTML = '';
+                updateStatus('Waiting for SVG input...');
+                return;
+            }
+
             const parser = new DOMParser();
             const svgDoc = parser.parseFromString(svgInput, 'image/svg+xml');
             let svgElement = svgDoc.documentElement;
+
+            if (svgElement.tagName.toLowerCase() !== 'svg') {
+                renderArea.innerHTML = 'Invalid SVG input';
+                updateStatus('Invalid SVG input');
+                return;
+            }
 
             const sizeOption = document.getElementById('sizeOption').value;
             let width, height;
@@ -138,7 +149,6 @@
             svgElement.setAttribute('height', height);
 
             const backgroundColor = document.getElementById('backgroundColor').value;
-            const renderArea = document.getElementById('renderArea');
             renderArea.style.backgroundColor = backgroundColor === 'transparent' ? 'transparent' : backgroundColor;
 
             renderArea.innerHTML = svgElement.outerHTML;
