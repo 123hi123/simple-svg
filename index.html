@@ -5,69 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SVG Renderer</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-        }
-        #settingsPanel {
-            padding: 20px;
-            background-color: #f0f0f0;
-            overflow-y: auto;
-            min-height: 100vh;
-        }
-        #mainContent {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 100vh;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            resize: vertical;
-        }
-        #renderArea {
-            border: 1px solid #ccc;
-            cursor: pointer;
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-        }
-        #renderArea svg {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-        }
-        button {
-            margin: 5px 0;
-            padding: 10px;
-            font-size: 16px;
-            width: 100%;
-        }
-        #statusMessage {
-            margin-top: 10px;
-            font-style: italic;
-            color: #666;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-        input[type="number"], select, input[type="text"] {
-            width: 100%;
-            padding: 5px;
-            margin-top: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div id="settingsPanel">
@@ -96,6 +34,12 @@
         <h3>Download Options</h3>
         <button onclick="generatePNG()">Download PNG 🖼️</button>
         <button onclick="generateSVG()">Download SVG</button>
+
+        <h3>Rendering History</h3>
+        <select id="renderingHistory" onchange="selectHistoryVersion()">
+            <option value="">Select a version</option>
+        </select>
+        <button onclick="rollbackToVersion()">Rollback to Selected Version</button>
     </div>
     
     <div id="mainContent">
@@ -106,166 +50,6 @@
         <div id="statusMessage"></div>
     </div>
 
-    <script>
-        function updateSettings() {
-            const sizeOption = document.getElementById('sizeOption').value;
-            const customSizeInputs = document.getElementById('customSizeInputs');
-            customSizeInputs.style.display = sizeOption === 'custom' ? 'block' : 'none';
-            renderSVG();
-        }
-
-        function renderSVG() {
-            const svgInput = document.getElementById('svgInput').value.trim();
-            const renderArea = document.getElementById('renderArea');
-            
-            if (svgInput === '') {
-                renderArea.innerHTML = '';
-                updateStatus('Waiting for SVG input...');
-                return;
-            }
-
-            const parser = new DOMParser();
-            const svgDoc = parser.parseFromString(svgInput, 'image/svg+xml');
-            let svgElement = svgDoc.documentElement;
-
-            if (svgElement.tagName.toLowerCase() !== 'svg') {
-                renderArea.innerHTML = 'Invalid SVG input';
-                updateStatus('Invalid SVG input');
-                return;
-            }
-
-            const sizeOption = document.getElementById('sizeOption').value;
-            let width, height;
-
-            if (sizeOption === 'custom') {
-                width = parseInt(document.getElementById('width').value, 10) || 1024;
-                height = parseInt(document.getElementById('height').value, 10) || 1024;
-            } else {
-                width = svgElement.width.baseVal.value || 1024;
-                height = svgElement.height.baseVal.value || 1024;
-            }
-
-            svgElement.setAttribute('width', width);
-            svgElement.setAttribute('height', height);
-
-            const backgroundColor = document.getElementById('backgroundColor').value;
-            renderArea.style.backgroundColor = backgroundColor === 'transparent' ? 'transparent' : backgroundColor;
-
-            renderArea.innerHTML = svgElement.outerHTML;
-            convertSVGtoPNGAndCopyToClipboard(false);
-        }
-
-        function generateSVG() {
-            const svgContent = document.getElementById('renderArea').innerHTML;
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'generated.svg';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function generatePNG() {
-            const renderArea = document.getElementById('renderArea');
-            const svgElement = renderArea.querySelector('svg');
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svgElement);
-            
-            const canvas = document.createElement('canvas');
-            const scale = 2; // Increase resolution
-            canvas.width = svgElement.width.baseVal.value * scale;
-            canvas.height = svgElement.height.baseVal.value * scale;
-            
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            img.onload = function() {
-                if (document.getElementById('backgroundColor').value !== 'transparent') {
-                    ctx.fillStyle = document.getElementById('backgroundColor').value;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'generated.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 'image/png');
-            };
-            
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-        }
-
-        async function pasteFromClipboard() {
-            try {
-                const text = await navigator.clipboard.readText();
-                document.getElementById('svgInput').value = text;
-                renderSVG();
-            } catch (err) {
-                console.error('Failed to read clipboard contents: ', err);
-            }
-        }
-
-        function convertSVGtoPNGAndCopyToClipboard(copyToClipboard = true) {
-            const renderArea = document.getElementById('renderArea');
-            const svgElement = renderArea.querySelector('svg');
-            if (!svgElement) {
-                updateStatus('No SVG found to convert');
-                return;
-            }
-
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svgElement);
-            
-            const canvas = document.createElement('canvas');
-            const scale = 2; // Increase resolution
-            canvas.width = svgElement.width.baseVal.value * scale;
-            canvas.height = svgElement.height.baseVal.value * scale;
-            
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            img.onload = function() {
-                if (document.getElementById('backgroundColor').value !== 'transparent') {
-                    ctx.fillStyle = document.getElementById('backgroundColor').value;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(function(blob) {
-                    if (copyToClipboard) {
-                        navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(() => {
-                            updateStatus('PNG copied to clipboard');
-                        }).catch(err => {
-                            console.error('Error copying PNG to clipboard:', err);
-                            updateStatus('Failed to copy PNG to clipboard');
-                        });
-                    } else {
-                        updateStatus('SVG rendered successfully');
-                    }
-                }, 'image/png');
-            };
-            
-            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-        }
-
-        function updateStatus(message) {
-            document.getElementById('statusMessage').textContent = message;
-        }
-
-        function copySVGToClipboard() {
-            convertSVGtoPNGAndCopyToClipboard(true);
-        }
-
-        document.getElementById('svgInput').addEventListener('input', renderSVG);
-        document.getElementById('renderArea').addEventListener('click', copySVGToClipboard);
-        updateSettings();
-    </script>
+    <script src="js/scripts.js"></script>
 </body>
 </html>

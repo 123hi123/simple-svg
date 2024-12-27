@@ -2,13 +2,37 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-const { getIcon } = require('./iconService');
+const { getIcon, getRenderingHistory, rollbackToVersion } = require('./iconService');
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     const parsedUrl = url.parse(req.url, true);
     
     if (parsedUrl.pathname === '/icon') {
-        getIcon(parsedUrl.query, res);
+        try {
+            await getIcon(parsedUrl.query, res);
+        } catch (error) {
+            console.error('Error generating icon:', error);
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Internal Server Error');
+        }
+    } else if (parsedUrl.pathname === '/history') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(getRenderingHistory()));
+    } else if (parsedUrl.pathname === '/rollback') {
+        const timestamp = parsedUrl.query.timestamp;
+        if (timestamp) {
+            const version = rollbackToVersion(timestamp);
+            if (version) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(version));
+            } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Version not found' }));
+            }
+        } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Timestamp parameter is required' }));
+        }
     } else {
         let filePath = path.join(__dirname, parsedUrl.pathname === '/' ? 'index.html' : parsedUrl.pathname);
         
