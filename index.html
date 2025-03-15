@@ -9,45 +9,106 @@
 </head>
 <body>
     <div id="settingsPanel">
-        <h2>Settings</h2>
-        <label for="sizeOption">Size Option:</label>
+        <h2>設置</h2>
+        <label for="sizeOption">尺寸選項:</label>
         <select id="sizeOption" onchange="updateSettings()">
-            <option value="dynamic" selected>Dynamic (SVG Size)</option>
-            <option value="custom">Custom Size</option>
+            <option value="dynamic" selected>動態 (SVG 尺寸)</option>
+            <option value="custom">自定義尺寸</option>
         </select>
         
         <div id="customSizeInputs">
-            <label for="width">Width:</label>
+            <label for="width">寬度:</label>
             <input type="number" id="width" value="1024" min="1" max="2048" onchange="updateSettings()">
             
-            <label for="height">Height:</label>
+            <label for="height">高度:</label>
             <input type="number" id="height" value="1024" min="1" max="2048" onchange="updateSettings()">
         </div>
         
-        <label for="backgroundColor">Background Color:</label>
+        <label for="backgroundColor">背景顏色:</label>
         <select id="backgroundColor" onchange="updateSettings()">
-            <option value="transparent">Transparent</option>
-            <option value="white">White</option>
-            <option value="black">Black</option>
+            <option value="transparent">透明</option>
+            <option value="white">白色</option>
+            <option value="black">黑色</option>
         </select>
 
-        <h3>Download Options</h3>
-        <button onclick="generatePNG()">Download PNG 🖼️</button>
-        <button onclick="generateSVG()">Download SVG</button>
+        <h3>下載選項</h3>
+        <button onclick="generatePNG()">下載 PNG 🖼️</button>
+        <button onclick="generateSVG()">下載 SVG</button>
+        <button onclick="generateICO()">下載 ICO 圖標</button>
 
-        <h3>Rendering History</h3>
+        <!-- ICO 保存路徑設置 -->
+        <h3>ICO 圖標設置</h3>
+        <div class="setting-group">
+            <label for="icoFilename">ICO 文件名:</label>
+            <input type="text" id="icoFilename" value="icon" placeholder="輸入文件名 (不包含.ico)">
+        </div>
+        <div class="setting-group">
+            <label for="icoSavePath">ICO 保存路徑:</label>
+            <input type="text" id="icoSavePath" placeholder="輸入保存路徑" readonly>
+            <button onclick="openPathDialog()">更改路徑</button>
+        </div>
+        <div id="icoPathDialog" class="dialog">
+            <div class="dialog-content">
+                <h3>設置 ICO 保存路徑</h3>
+                <p>請輸入您想要保存 ICO 文件的完整路徑:</p>
+                <input type="text" id="newIcoSavePath" placeholder="例如: C:\Users\用戶名\Pictures\Icons">
+                <div class="path-tips">
+                    <p><strong>路徑格式要求:</strong></p>
+                    <ul>
+                        <li>必須使用絕對路徑 (例如: C:\Icons 或 D:\Pictures\Icons)</li>
+                        <li>路徑必須以驅動器盤符開頭 (如 C:\ 或 D:\)</li>
+                        <li>請避免使用系統目錄 (如 Windows, System32)</li>
+                        <li>如果路徑不存在，系統將嘗試創建它</li>
+                        <li>您的賬戶必須有寫入該位置的權限</li>
+                    </ul>
+                </div>
+                <div class="path-tips">
+                    <p><strong>常見問題解決:</strong></p>
+                    <ul>
+                        <li>Windows文件資源管理器複製的路徑可能包含引號，系統會自動移除</li>
+                        <li>如果遇到"無權限"錯誤，請選擇您有權限寫入的文件夾</li>
+                        <li>建議使用用戶文件夾下的位置，例如 Documents 或 Pictures</li>
+                    </ul>
+                </div>
+                <div class="common-paths">
+                    <p><strong>推薦路徑 (點擊選擇):</strong></p>
+                    <ul>
+                        <li><a href="#" onclick="selectPath('C:\\Users\\Public\\Pictures\\Icons'); return false;">公共圖片文件夾 (C:\Users\Public\Pictures\Icons)</a></li>
+                        <li><a href="#" onclick="selectPath('C:\\Users\\Public\\Documents\\Icons'); return false;">公共文檔文件夾 (C:\Users\Public\Documents\Icons)</a></li>
+                        <li><a href="#" onclick="selectPath(getUserHome() + '\\Pictures\\Icons'); return false;">您的圖片文件夾 (Pictures\Icons)</a></li>
+                        <li><a href="#" onclick="selectPath(getUserHome() + '\\Desktop\\Icons'); return false;">您的桌面 (Desktop\Icons)</a></li>
+                        <li><a href="#" onclick="selectPath('D:\\Icons'); return false;">D盤根目錄 (D:\Icons)</a></li>
+                    </ul>
+                </div>
+                <div class="dialog-buttons">
+                    <button onclick="saveIcoSavePath()">保存路徑設置</button>
+                    <button onclick="testPath()">測試路徑</button>
+                    <button onclick="closePathDialog()">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>渲染歷史</h3>
         <select id="renderingHistory" onchange="selectHistoryVersion()">
-            <option value="">Select a version</option>
+            <option value="">選擇一個版本</option>
         </select>
-        <button onclick="rollbackToVersion()">Rollback to Selected Version</button>
+        <button onclick="rollbackToVersion()">回滾到選定版本</button>
     </div>
     
     <div id="mainContent">
-        <h1>SVG Renderer</h1>
+        <h1>SVG 渲染器</h1>
         <textarea id="svgInput"></textarea>
-        <button onclick="pasteFromClipboard()">Paste from Clipboard</button>
-        <div id="renderArea" title="Click to copy as PNG"></div>
+        <button onclick="pasteFromClipboard()">從剪貼板粘貼</button>
+        <div id="renderArea" title="點擊複製為 PNG"></div>
         <div id="statusMessage"></div>
+    </div>
+
+    <!-- 毛玻璃特效成功提示框 -->
+    <div id="successToast" class="toast">
+        <div class="toast-content">
+            <div class="toast-icon">✓</div>
+            <div class="toast-message">操作成功！</div>
+        </div>
     </div>
 
     <script src="js/scripts.js"></script>
