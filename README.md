@@ -1,6 +1,6 @@
 # 簡易 SVG 渲染與轉換工具
 
-這是一個用於 SVG 編輯、預覽和轉換的工具，支持將 SVG 導出為 PNG、SVG 和 ICO 格式。
+這是一個用於 SVG 編輯、預覽和轉換的工具，支持將 SVG 導出為 PNG、SVG 和 Windows ICO 格式。
 
 ## 快速啟動指南
 
@@ -13,36 +13,45 @@
 
 1. **克隆或下載項目**
 
-   ```bash
-   git clone https://your-repository-url/simple-svg.git
-   cd simple-svg
-   ```
-
-   或者直接下載並解壓項目文件。
+   直接下載並解壓項目文件到您的電腦上。
 
 2. **安裝依賴**
 
-   在項目根目錄下運行：
+   打開終端/命令提示符，進入項目根目錄，運行：
 
    ```bash
    # 安裝所有依賴
    npm install
-   
-   # 或者手動安裝單個依賴
-   npm install sharp png-to-ico
    ```
 
    主要依賴項：
-   - `sharp`: 用於圖像處理和轉換
-   - `png-to-ico`: 用於將 PNG 轉換為 Windows ICO 格式
+   - `sharp` (v0.33.5): 用於圖像處理和轉換
+   - `png-to-ico` (v2.1.8): 用於將 PNG 轉換為 Windows ICO 格式
 
 3. **啟動服務器**
+
+   在項目根目錄中運行：
 
    ```bash
    node server.js
    ```
 
-   服務器將在 [http://localhost:1024](http://localhost:1024) 啟動。
+   成功啟動後，您將看到以下訊息：
+   ```
+   Server running at http://localhost:1024/
+   ```
+
+   **Windows便捷啟動選項：**
+   
+   - **一鍵啟動**：雙擊項目根目錄中的 `start_server.bat` 文件，即可自動啟動服務。
+     > 注意：啟動窗口需保持開啟，關閉窗口將停止服務。
+   
+   - **開機自啟動**：
+     1. 右鍵點擊 `start_server_hidden.vbs` 並創建快捷方式
+     2. 按 `Win + R` 鍵，輸入 `shell:startup` 打開啟動文件夾
+     3. 將快捷方式移動到啟動文件夾中
+     4. 或者使用 Windows 任務計劃程序設置開機時自動運行此 VBS 文件
+     > 注意：使用VBS方式啟動時，服務將在後台運行，無窗口顯示。
 
 4. **訪問應用**
 
@@ -54,6 +63,21 @@
 
 1. 將您的 SVG 代碼粘貼到左側文本框中，或點擊「從剪貼板粘貼」按鈕。
 2. SVG 將自動渲染在右側預覽區域。
+
+### SVG 測試示例
+
+複製以下 SVG 代碼到應用中測試：
+
+```xml
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="80" fill="#3498db" />
+  <rect x="60" y="60" width="80" height="80" fill="#e74c3c" />
+  <polygon points="100,40 120,70 150,70 125,90 135,120 100,105 65,120 75,90 50,70 80,70" fill="#f1c40f" />
+  <text x="100" y="175" font-family="Arial" font-size="18" text-anchor="middle" fill="white">SVG 測試</text>
+</svg>
+```
+
+這將顯示一個藍色圓形、紅色矩形和黃色星形的簡單圖案。
 
 ### 導出圖像
 
@@ -85,16 +109,23 @@
   });
   ```
 
-- **依賴安裝失敗**：若 sharp 或其他依賴安裝失敗，可嘗試：
+- **依賴安裝失敗**：若安裝 sharp 失敗，可嘗試：
   ```bash
   npm cache clean --force
-  npm install --no-optional
+  npm install sharp --verbose
+  npm install png-to-ico
   ```
 
-- **圖標生成失敗**：確保安裝了 png-to-ico 依賴：
+- **圖標生成失敗**: 如果顯示 "無法轉換為ICO格式" 錯誤，請確保重新啟動服務器：
   ```bash
-  npm install png-to-ico --save
+  # 關閉當前運行的服務器（按 Ctrl+C）
+  node server.js  # 重新啟動
   ```
+
+- **後台服務問題**：如果使用 VBS 啟動後台服務，但無法訪問：
+  1. 按 `Ctrl+Alt+Del` 打開任務管理器
+  2. 檢查是否有 Node.js 進程在運行
+  3. 如沒有，重新雙擊運行 `.bat` 文件查看錯誤信息
 
 ## 生成 ICO 文件注意事項
 
@@ -105,7 +136,7 @@
 
 推薦使用以下路徑：
 - `C:\Users\Public\Pictures\Icons`
-- `C:\Users\YourUsername\Pictures\Icons`
+- `C:\Users\[您的用戶名]\Pictures\Icons`
 - `D:\Icons`
 
 ## 主要功能
@@ -114,4 +145,4 @@
 - 導出為 PNG 格式
 - 導出為 SVG 格式
 - 生成 Windows ICO 圖標文件
-- 預覽和歷史記錄管理 (不可用)
+- 預覽和歷史記錄管理
