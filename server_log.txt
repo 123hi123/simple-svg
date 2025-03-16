@@ -1,0 +1,7 @@
+Server running at http://localhost:1024/
+收到請求: GET /
+收到請求: GET /css/styles.css
+收到請求: GET /js/scripts.js
+收到請求: GET /history
+收到請求: GET /ico-save-path
+收到請求: GET /favicon.svg

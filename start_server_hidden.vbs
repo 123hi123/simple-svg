@@ -1,3 +1,5 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run chr(34) & "start_server.bat" & Chr(34), 0
+Set fso = CreateObject("Scripting.FileSystemObject")
+currentPath = fso.GetParentFolderName(WScript.ScriptFullName)
+WshShell.Run "cmd /c """ & currentPath & "\silent_server.bat""", 0, False
 Set WshShell = Nothing
